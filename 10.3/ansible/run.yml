@@ -5,9 +5,16 @@
       stat:
         path: "/var/lib/mysql/mysql"
       register: _mysql_data_dir
+
+    # We force the root user auth method to "normal" as older versions of
+    # mariadb relied on it, and it causes issues for our init script.
     - name: Run MySQL initialization script
       shell: >
-        mysql_install_db --user=mysql --datadir=/var/lib/mysql
+        mysql_install_db
+        --user=mysql
+        --datadir=/var/lib/mysql
+        --skip-test-db
+        --auth-root-authentication-method=normal
       when:
         - _mysql_data_dir.stat.exists == false
 
@@ -62,16 +69,6 @@
       when:
         - _mycnf.stat.exists
 
-    - name: Drop the test database
-      mysql_db:
-        name: "test"
-        state: absent
-        login_user: "root"
-        login_unix_socket: "/var/run/mysqld/mysqld.sock"
-        config_file: "{{ _conf_file_path | default(omit) }}"
-      when:
-        - _mysql_data_dir.stat.exists == false
-
     - name: Ensure MySQL users are present.
       mysql_user:
         name: "{{ item.name }}"
@@ -92,19 +89,6 @@
       with_items: "{{ mysql_users }}"
       no_log: "{{ flightdeck_debug | default(false) | ternary(false, true) }}"
 
-    - name: Generate a list of additional databases to create.
-      set_fact:
-        db:
-          name: "{{ item }}"
-          encoding: "latin1"
-          collation: "latin1_general_ci"
-      loop: "{{ lookup('env', 'ADDITIONAL_DATABASES').split() | list | unique }}"
-      register: _additional_dbs_raw
-
-    - name: Normalize the additional dbs into a list.
-      set_fact:
-        _additional_dbs: "{{ _additional_dbs_raw.results | map(attribute='ansible_facts.db') | list | default([]) }}"
-
     - name: Ensure MySQL databases are present.
       mysql_db:
         name: "{{ item.name }}"
@@ -114,7 +98,7 @@
         login_user: "root"
         login_unix_socket: "/var/run/mysqld/mysqld.sock"
         config_file: "{{ _conf_file_path | default(omit) }}"
-      with_items: "{{ mysql_databases + _additional_dbs }}"
+      with_items: "{{ mysql_databases }}"
 
     - name: Get the root password.
       set_fact:
