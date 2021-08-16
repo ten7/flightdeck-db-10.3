@@ -3,7 +3,7 @@
   roles:
     - ten7.flightdeck_base
   tasks:
-    - name: Install MySQL.
+    - name: Install needed software.
       apk:
         name: "{{ item }}"
         state: present
@@ -14,6 +14,24 @@
         - "mariadb-client"
       notify:
         - clear apk cache
+    - name: Install build deps
+      shell: >
+        apk add --virtual build-deps
+        gcc
+        libffi-dev
+        python3-dev
+        linux-headers
+        musl-dev
+        openssl-dev
+        rust
+        cargo
+      notify: remove build deps
+    - name: Install the additional packages from pip
+      pip:
+        name:
+          - "boto3"
+          - "botocore"
+        extra_args: "--ignore-installed --no-cache-dir"
     - name: Ensure key directories are owned by mysql
       file:
         path: "{{ item }}"
@@ -37,6 +55,9 @@
         - "/etc/my.cnf"
 
   handlers:
+    - name: remove build deps
+      shell: >
+        apk del build-deps
     - name: clear apk cache
       file:
         path: "{{ item }}"
