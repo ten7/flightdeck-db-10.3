@@ -30,6 +30,8 @@
           {{ item.clone.secretKey | default(omit) }}\
           {% endif %}"
       loop: "{{ mysql_databases | default([]) }}"
+      loop_control:
+        label: "{{ item.name }}"
       no_log: "{{ flightdeck_debug | default(false) | ternary(false, true) }}"
       when:
         - item.clone is defined
@@ -49,9 +51,12 @@
       args:
         chdir: "{{ _cmd_temp_dir.path }}"
       loop: "{{ mysql_databases | default([]) }}"
+      loop_control:
+        label: "{{ item.name }}"
       vars:
         _compression: "{{ item.clone.compression | default('none') }}"
         _archive: "{{ _cmd_temp_dir.path }}/{{ item.name }}.sqldump"
+      no_log: "{{ flightdeck_debug | default(false) | ternary(false, true) }}"
       when:
         - item.clone is defined
 
