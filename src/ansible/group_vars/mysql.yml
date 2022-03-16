@@ -34,7 +34,7 @@ flightdeck_init_commands: |
     elif [ -f "/secrets/flight-deck-db.yml" ]; then
       ansible-playbook -i /ansible/inventories/all.ini -e "@/secrets/flight-deck-db.yml" /ansible/init.yml
     else
-      ansible-playbook -i /ansible/inventories/all.ini /ansible/run.yml
+      ansible-playbook -i /ansible/inventories/all.ini /ansible/init.yml
     fi
   fi
 
