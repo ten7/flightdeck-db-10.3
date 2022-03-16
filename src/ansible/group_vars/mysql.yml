@@ -1,0 +1,78 @@
+---
+flighdeck_motd_name: DB 10.3
+
+flightdeck_groups:
+  - name: "mysql"
+
+flightdeck_users:
+  - name: "mysql"
+    group: "mysql"
+    home: "/home/mysql"
+
+flightdeck_root_prompt: '\u@flightdeck-db:\w# '
+flightdeck_user_prompt: '\u@flightdeck-db:\w$ '
+
+flightdeck_motd_links:
+  - name: 'Code & docs'
+    url: 'https://github.com/ten7/flightdeck-db-10.3'
+  - name: ' Learn more'
+    url: 'https://flightdeck.ten7.com/'
+
+# @todo Remove `/secrets` statement when all clusters have be updated.
+flightdeck_init_commands: |
+  if [ -f "/ansible/init.yml" ]; then
+    if [ -n "${FLIGHTDECK_CONFIG}" ]; then
+      config_file=$(mktemp "${TMPDIR:-/tmp/}$(basename $0).XXXXXXXXXXXX")
+      echo "$FLIGHTDECK_CONFIG" | base64 -d > $config_file
+      ansible-playbook -i /ansible/inventories/all.ini -e "@${config_file}" /ansible/init.yml
+    elif [ -f "${FLIGHTDECK_CONFIG_FILE}" ]; then
+      ansible-playbook -i /ansible/inventories/all.ini -e "@${FLIGHTDECK_CONFIG_FILE}" /ansible/init.yml
+    elif [ -f "/config/mysql/flightdeck-db.yml" ]; then
+      ansible-playbook -i /ansible/inventories/all.ini -e "@/config/mysql/flightdeck-db.yml" /ansible/init.yml
+    elif [ -f "/config/mysql/flight-deck-db.yml" ]; then
+      ansible-playbook -i /ansible/inventories/all.ini -e "@/config/mysql/flight-deck-db.yml" /ansible/init.yml
+    elif [ -f "/secrets/flight-deck-db.yml" ]; then
+      ansible-playbook -i /ansible/inventories/all.ini -e "@/secrets/flight-deck-db.yml" /ansible/init.yml
+    else
+      ansible-playbook -i /ansible/inventories/all.ini /ansible/run.yml
+    fi
+  fi
+
+flightdeck_run_commands: |
+  if [ -f "/ansible/run.yml" ]; then
+    if [ -n "${FLIGHTDECK_CONFIG}" ]; then
+      config_file=$(mktemp "${TMPDIR:-/tmp/}$(basename $0).XXXXXXXXXXXX")
+      echo "$FLIGHTDECK_CONFIG" | base64 -d > $config_file
+      ansible-playbook -i /ansible/inventories/all.ini -e "@${config_file}" /ansible/run.yml
+    elif [ -f "${FLIGHTDECK_CONFIG_FILE}" ]; then
+      ansible-playbook -i /ansible/inventories/all.ini -e "@${FLIGHTDECK_CONFIG_FILE}" /ansible/run.yml
+    elif [ -f "/config/mysql/flightdeck-db.yml" ]; then
+      ansible-playbook -i /ansible/inventories/all.ini -e "@/config/mysql/flightdeck-db.yml" /ansible/run.yml
+    elif [ -f "/config/mysql/flight-deck-db.yml" ]; then
+      ansible-playbook -i /ansible/inventories/all.ini -e "@/config/mysql/flight-deck-db.yml" /ansible/run.yml
+    elif [ -f "/secrets/flight-deck-db.yml" ]; then
+      ansible-playbook -i /ansible/inventories/all.ini -e "@/secrets/flight-deck-db.yml" /ansible/run.yml
+    else
+      ansible-playbook -i /ansible/inventories/all.ini /ansible/run.yml
+    fi
+  fi
+
+mysql_root_password: "{{ lookup('env', 'MYSQL_ROOT_PASSWORD') | default('', true) }}"
+mysql_allow_remote_root: "{{ lookup('env', 'MYSQL_ALLOW_REMOTE_ROOT') | default(false, true) | bool }}"
+mysql_databases:
+  - name: "{{ lookup('env', 'MYSQL_DATABASE') | default('drupal', true) }}"
+    encoding: "latin1"
+    collation: "latin1_general_ci"
+mysql_users:
+  - name: "{{ lookup('env', 'MYSQL_USER') | default('drupal', true) }}"
+    host: "%"
+    password: "{{ lookup('env', 'MYSQL_PASSWORD') | default('drupal', true) }}"
+    priv: "{{ lookup('env', 'MYSQL_DATABASE') | default('drupal', true) }}.*:ALL"
+  - name: "{{ lookup('env', 'MYSQL_USER') | default('drupal', true) }}"
+    host: "localhost"
+    password: "{{ lookup('env', 'MYSQL_PASSWORD') | default('drupal', true) }}"
+    priv: "*.*:ALL,GRANT"
+mysql_key_buffer_size: "256M"
+mysql_max_allowed_packet: "64M"
+mysql_table_open_cache: "256"
+mysql_query_cache_size: "0"

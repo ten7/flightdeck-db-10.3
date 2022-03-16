@@ -1,4 +1,4 @@
-FROM alpine:3.9
+FROM alpine:3.10
 MAINTAINER tess@ten7.com
 
 # Update the package list and install Ansible.
@@ -20,7 +20,6 @@ RUN ansible-galaxy install -fr /ansible/requirements.yml && \
     ansible-playbook -i /ansible/inventories/all.ini /ansible/build.yml
 
 # Configure the runtime environment of the container.
-VOLUME /var/lib/mysql
 EXPOSE 3306
 
 # Switch to the service account.
@@ -28,4 +27,4 @@ USER mysql
 
 # Set the entrypoint and default command.
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["mysqld_safe", "--user=mysql", "--console"]
+CMD ["docker-cmd.sh", "mysqld_safe", "--user=mysql", "--console"]

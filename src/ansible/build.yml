@@ -3,7 +3,7 @@
   roles:
     - ten7.flightdeck_base
   tasks:
-    - name: Install MySQL.
+    - name: Install needed software.
       apk:
         name: "{{ item }}"
         state: present
